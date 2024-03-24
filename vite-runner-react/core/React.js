@@ -20,28 +20,69 @@ function createElement(type,props,...children){
     };
 }
 
+let nextWorkOfUnit = null;
+function workLoop(deadline){
+    let shouldYield = false
+    while(!shouldYield && nextWorkOfUnit){
+        nextWorkOfUnit = performWorkUnit(nextWorkOfUnit)
+
+        shouldYield = deadline.timeRemaining() < 1
+    }
+    requestIdleCallback(workLoop)
+}
+requestIdleCallback(workLoop)
+
 function render(el,container) {
-    // 创建对应的元素
-    const dom = 
-        el.type === "TEXT_ELEMENT" 
-        ? document.createTextNode("")
-        : document.createElement(el.type)
-
-    // 设置props
-    Object.keys(el.props).forEach(key => {
-        if(key !== "children"){
-            dom[key] = el.props[key]
+    nextWorkOfUnit = {
+        dom: container,
+        props: {
+            children: [el]
         }
-    });
+    }
+}
 
-    // 额外处理一下children
-    const children = el.props.children
-    children.forEach(child => {
-        render(child,dom)
-    });
+function performWorkUnit(work){
+    if(!work.dom){
+        // 1. 创建dom
+        const dom = (work.dom = 
+            work.type === "TEXT_ELEMENT" 
+            ? document.createTextNode("")
+            : document.createElement(work.type)
+        )
+        
+        work.parent.dom.append(dom)
+        // 2. 设置props
+        Object.keys(work.props).forEach(key => {
+            if(key !== "children") {
+                dom[key] = work.props[key]
+            }
+        })
+    }
+    // 3. 转换链表 设置好指针
+    const children = work.props.children
+    let prevChild = null
+    children.forEach((child,index) => {
+        const nextWork = {
+            type: child.type,
+            props: child.props,
+            parent: work,
+            child: null,
+            sibling: null,
+            dom: null
+        }
+        if(index === 0){
+            work.child = nextWork
+        }else {
+            prevChild.sibling = nextWork
+        }
+        prevChild = nextWork
+    })
+    // 4. 返回下一个要执行的任务
+    if(work.child){return work.child}
 
-    // 添加到对应的父元素下面
-    container.append(dom);
+    if(work.sibling){return work.sibling}
+
+    return work.parent?.sibling
 }
 
 const React = {
