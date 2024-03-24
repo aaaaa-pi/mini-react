@@ -41,48 +41,58 @@ function render(el,container) {
     }
 }
 
-function performWorkUnit(work){
-    if(!work.dom){
-        // 1. 创建dom
-        const dom = (work.dom = 
-            work.type === "TEXT_ELEMENT" 
-            ? document.createTextNode("")
-            : document.createElement(work.type)
-        )
-        
-        work.parent.dom.append(dom)
-        // 2. 设置props
-        Object.keys(work.props).forEach(key => {
-            if(key !== "children") {
-                dom[key] = work.props[key]
-            }
-        })
-    }
-    // 3. 转换链表 设置好指针
-    const children = work.props.children
+function createDom (type) {
+    return type === "TEXT_ELEMENT" 
+        ? document.createTextNode("")
+        : document.createElement(type)
+}
+
+function updateProps(dom,props){
+    Object.keys(props).forEach(key => {
+        if(key !== "children") {
+            dom[key] = props[key]
+        }
+    })
+}
+
+function initChildren (fiber){
+    const children = fiber.props.children
     let prevChild = null
     children.forEach((child,index) => {
-        const nextWork = {
+        const nextFiber = {
             type: child.type,
             props: child.props,
-            parent: work,
+            parent: fiber,
             child: null,
             sibling: null,
             dom: null
         }
         if(index === 0){
-            work.child = nextWork
+            fiber.child = nextFiber
         }else {
-            prevChild.sibling = nextWork
+            prevChild.sibling = nextFiber
         }
-        prevChild = nextWork
+        prevChild = nextFiber
     })
+}
+
+function performWorkUnit(fiber){
+    if(!fiber.dom){
+        // 1. 创建dom
+        const dom = (fiber.dom = createDom(fiber.type))
+
+        fiber.parent.dom.append(dom);
+        // 2. 设置props
+        updateProps(dom,fiber.props)
+    }
+    // 3. 转换链表 设置好指针
+    initChildren(fiber)
     // 4. 返回下一个要执行的任务
-    if(work.child){return work.child}
+    if(fiber.child){return fiber.child}
 
-    if(work.sibling){return work.sibling}
+    if(fiber.sibling){return fiber.sibling}
 
-    return work.parent?.sibling
+    return fiber.parent?.sibling
 }
 
 const React = {
