@@ -90,9 +90,12 @@ function performWorkUnit(fiber){
     // 4. 返回下一个要执行的任务
     if(fiber.child){return fiber.child}
 
-    if(fiber.sibling){return fiber.sibling}
+    let parent = fiber.parent;
+    while(parent && parent.sibling === null){
+        parent = parent.parent;
+    }
 
-    return fiber.parent?.sibling
+    return parent?.sibling;
 }
 
 const React = {

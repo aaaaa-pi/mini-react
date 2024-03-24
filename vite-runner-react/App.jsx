@@ -5,6 +5,9 @@ const App = (
         <div>111</div>
         <span>span</span>
         <span>span</span>
+        <div>
+            <span>span2</span>
+        </div>
         <div>1234</div>
         <div>1234567</div>
         <div>1234567</div>
