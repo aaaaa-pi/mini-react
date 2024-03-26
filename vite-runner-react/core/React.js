@@ -14,10 +14,22 @@ function createElement(type,props,...children){
         props: {
             ...props,
             children: children.map((child) => {
-                return typeof child === "string" ? createTextNode(child) : child
+                const isTextNode = typeof child === "string" || typeof child === "number"
+                return isTextNode ? createTextNode(child) : child
             })
         },
     };
+}
+
+function render(el,container) {
+    nextWorkOfUnit = {
+        dom: container,
+        props: {
+            children: [el]
+        }
+    }
+
+    root = nextWorkOfUnit
 }
 
 let nextWorkOfUnit = null;
@@ -34,18 +46,6 @@ function workLoop(deadline){
     }
     requestIdleCallback(workLoop)
 }
-requestIdleCallback(workLoop)
-
-function render(el,container) {
-    nextWorkOfUnit = {
-        dom: container,
-        props: {
-            children: [el]
-        }
-    }
-
-    root = nextWorkOfUnit
-}
 
 function commitRoot(){
     commitWork(root.child)
@@ -54,7 +54,15 @@ function commitRoot(){
 
 function commitWork(fiber) {
     if(!fiber)return 
-    fiber.parent.dom.append(fiber.dom)
+    
+    let fiberParent = fiber.parent
+    while(!fiberParent.dom){
+        fiberParent = fiberParent.parent
+    }
+
+    if(fiber.dom){
+        fiberParent.dom.append(fiber.dom)
+    }
     commitWork(fiber.child)
     commitWork(fiber.sibling)
 }
@@ -73,8 +81,7 @@ function updateProps(dom,props){
     })
 }
 
-function initChildren (fiber){
-    const children = fiber.props.children
+function initChildren (fiber,children){
     let prevChild = null
     children.forEach((child,index) => {
         const nextFiber = {
@@ -94,7 +101,13 @@ function initChildren (fiber){
     })
 }
 
-function performWorkUnit(fiber){
+function updateFunctionComponent(fiber) {
+    const children = [fiber.type(fiber.props)]
+
+    initChildren(fiber,children)
+}
+
+function updateHostComponent(fiber){
     if(!fiber.dom){
         // 1. 创建dom
         const dom = (fiber.dom = createDom(fiber.type))
@@ -102,8 +115,21 @@ function performWorkUnit(fiber){
         // 2. 设置props
         updateProps(dom,fiber.props)
     }
+
+    const children = fiber.props.children
     // 3. 转换链表 设置好指针
-    initChildren(fiber)
+    initChildren(fiber,children)
+}
+
+function performWorkUnit(fiber){
+    const isFunctionComponent = typeof fiber.type === "function"
+
+    if(isFunctionComponent){
+        updateFunctionComponent(fiber)
+    }else {
+        updateHostComponent(fiber)
+    }
+
     // 4. 返回下一个要执行的任务
     if(fiber.child){return fiber.child}
 
@@ -113,6 +139,8 @@ function performWorkUnit(fiber){
         nextFiber = nextFiber.parent
     }
 }
+
+requestIdleCallback(workLoop)
 
 const React = {
     createElement,

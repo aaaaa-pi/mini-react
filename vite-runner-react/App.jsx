@@ -1,10 +1,15 @@
 import React from './core/React.js'
 
+function Counter({ num }) {
+    return <div>count: {num}</div>;
+  }
+
 const App = (
     <div id="app">
         <div>111</div>
         <span>span</span>
         <span>span</span>
+        <Counter num={10}></Counter>
         <div>
             <span>span2</span>
         </div>
