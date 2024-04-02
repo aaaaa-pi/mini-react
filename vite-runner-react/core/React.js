@@ -34,12 +34,16 @@ function render(el,container) {
 
 let nextWorkOfUnit = null;
 let wipRoot = null;
-let currentRoot = null;
+let wipFiber = null;
 let deletions = [];
 function workLoop(deadline){
     let shouldYield = false
     while(!shouldYield && nextWorkOfUnit){
         nextWorkOfUnit = performWorkUnit(nextWorkOfUnit)
+
+        if(wipRoot?.sibling?.type === nextWorkOfUnit?.type){
+            nextWorkOfUnit = undefined
+        }
 
         shouldYield = deadline.timeRemaining() < 1
     }
@@ -52,7 +56,6 @@ function workLoop(deadline){
 function commitRoot(){
     deletions.forEach(commitDeletion)
     commitWork(wipRoot.child)
-    currentRoot = wipRoot
     wipRoot = null
     deletions = []
 }
@@ -92,16 +95,6 @@ function createDom (type) {
     return type === "TEXT_ELEMENT" 
         ? document.createTextNode("")
         : document.createElement(type)
-}
-
-function update() {
-    wipRoot = {
-        dom: currentRoot.dom,
-        props: currentRoot.props,
-        alternate: currentRoot
-    }
-
-    nextWorkOfUnit = wipRoot
 }
 
 function updateProps(dom,newProps,prevProps){
@@ -180,6 +173,8 @@ function reconcileChildren (fiber,children){
 }
 
 function updateFunctionComponent(fiber) {
+    wipFiber = fiber;
+
     const children = [fiber.type(fiber.props)]
 
     reconcileChildren(fiber,children)
@@ -197,6 +192,20 @@ function updateHostComponent(fiber){
     const children = fiber.props.children
     // 3. 转换链表 设置好指针
     reconcileChildren(fiber,children)
+}
+
+function update() {
+    let currentFiber = wipFiber;
+
+    return () => {
+        console.log(currentFiber);
+        wipRoot = {
+            ...currentFiber,
+            alternate: currentFiber
+        }
+
+        nextWorkOfUnit = wipRoot
+    }
 }
 
 function performWorkUnit(fiber){
