@@ -36,6 +36,8 @@ let nextWorkOfUnit = null;
 let wipRoot = null;
 let wipFiber = null;
 let deletions = [];
+let stateHooks;
+let stateHookIndex;
 function workLoop(deadline){
     let shouldYield = false
     while(!shouldYield && nextWorkOfUnit){
@@ -173,6 +175,8 @@ function reconcileChildren (fiber,children){
 }
 
 function updateFunctionComponent(fiber) {
+    stateHooks = [];
+    stateHookIndex = 0;
     wipFiber = fiber;
 
     const children = [fiber.type(fiber.props)]
@@ -208,6 +212,41 @@ function update() {
     }
 }
 
+function useState(initial) {
+    let currentFiber = wipFiber;
+    const oldHook = currentFiber.alternate?.stateHooks[stateHookIndex]
+    const stateHook = {
+        state: oldHook ? oldHook.state : initial,
+        queue: oldHook ? oldHook.queue : [],
+    }
+
+    stateHook.queue.forEach((action) => {
+        stateHook.state = action(stateHook.state)
+    })
+
+    stateHook.queue = [];
+    stateHookIndex++;
+    stateHooks.push(stateHook);
+
+    currentFiber.stateHooks = stateHooks;
+
+    function setState(action) {
+        const eagerState = typeof action === "function" ? action(stateHook.state) : action;
+        if(eagerState === stateHook.state) return;
+
+        stateHook.queue.push(typeof action === "function" ? action : () => action)
+
+        wipRoot = {
+            ...currentFiber,
+            alternate: currentFiber,
+        }
+
+        nextWorkOfUnit = wipRoot
+    }
+
+    return [stateHook.state,setState]
+}
+
 function performWorkUnit(fiber){
     const isFunctionComponent = typeof fiber.type === "function"
 
@@ -232,7 +271,8 @@ requestIdleCallback(workLoop)
 const React = {
     createElement,
     render,
-    update
+    update,
+    useState
 }
 
 export default React;
