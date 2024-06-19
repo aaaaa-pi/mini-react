@@ -49,6 +49,15 @@ export function Todos (){
         })
         setTodos(newTodos)
     }
+    function cancelTodo(id) {
+        const newTodos = todos.map((todo) => {
+            if(todo.id === id){
+                return { ...todo, status: 'active' }
+            }
+            return todo
+        })
+        setTodos(newTodos)
+    }
     
     return (
         <div>
@@ -62,7 +71,10 @@ export function Todos (){
                         <li className={todo.status}>
                             {todo.title}
                             <button onClick={() => removeTodo(todo.id)}>remove</button>    
-                            <button onClick={() => doneTodo(todo.id)}>done</button>    
+                            {todo.status === "active" ? 
+                                <button onClick={() => doneTodo(todo.id)}>done</button>:
+                                <button onClick={() => cancelTodo(todo.id)}>cabcel</button>    
+                            }   
                         </li>  
                    )
                 })}
