@@ -28,7 +28,8 @@ export function Todos (){
             ...todos,
             { 
                 id: crypto.randomUUID(),   
-                title 
+                title,
+                status: 'active'
             }
         ])
     }
@@ -68,17 +69,31 @@ export function Todos (){
             <ul>
                 {...todos.map((todo) => {
                    return (
-                        <li className={todo.status}>
-                            {todo.title}
-                            <button onClick={() => removeTodo(todo.id)}>remove</button>    
-                            {todo.status === "active" ? 
-                                <button onClick={() => doneTodo(todo.id)}>done</button>:
-                                <button onClick={() => cancelTodo(todo.id)}>cabcel</button>    
-                            }   
+                        <li>
+                            <TodoItem 
+                                todo={todo}
+                                removeTodo={removeTodo}
+                                doneTodo={doneTodo}
+                                cancelTodo={cancelTodo}
+                            />
                         </li>  
                    )
                 })}
             </ul>
+        </div>
+    )
+}
+
+function TodoItem ({todo,removeTodo,doneTodo,cancelTodo}){
+    return (
+        <div className={todo.status}>
+            {todo.title}
+            <button onClick={() => removeTodo(todo.id)}>remove</button>    
+            {todo.status === "active" ? (
+                <button onClick={() => doneTodo(todo.id)}>done</button>
+            ):(
+                <button onClick={() => cancelTodo(todo.id)}>cabcel</button>
+            )}
         </div>
     )
 }
