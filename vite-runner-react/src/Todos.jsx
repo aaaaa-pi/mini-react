@@ -4,15 +4,18 @@ export function Todos (){
     const [todos,setTodos] = React.useState([
         {
             id: crypto.randomUUID(), // 浏览器创建的唯一标识
-            title:'吃饭'
+            title:'吃饭',
+            status: 'active'
         },
         {
             id: crypto.randomUUID(), // 浏览器创建的唯一标识
-            title:'吃饭'
+            title:'吃饭',
+            status: 'active'
         },
         {
             id: crypto.randomUUID(), // 浏览器创建的唯一标识
-            title:'吃饭'
+            title:'吃饭',
+            status: 'active'
         }
     ])
     const [inputValue,setInputValue] = React.useState("")
@@ -35,7 +38,17 @@ export function Todos (){
         });
     
         setTodos(newTodos);
-      }
+    }
+
+    function doneTodo(id) {
+        const newTodos = todos.map((todo) => {
+            if(todo.id === id){
+                return { ...todo, status: 'done' }
+            }
+            return todo
+        })
+        setTodos(newTodos)
+    }
     
     return (
         <div>
@@ -46,9 +59,10 @@ export function Todos (){
             <ul>
                 {...todos.map((todo) => {
                    return (
-                        <li>
+                        <li className={todo.status}>
                             {todo.title}
                             <button onClick={() => removeTodo(todo.id)}>remove</button>    
+                            <button onClick={() => doneTodo(todo.id)}>done</button>    
                         </li>  
                    )
                 })}

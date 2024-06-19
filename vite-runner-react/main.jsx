@@ -1,3 +1,4 @@
+import "./style.css"
 import App from './App.jsx'
 import React from './core/React.js';
 import ReactDOM from './core/ReactDom.js'
